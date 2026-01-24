@@ -20,5 +20,6 @@ RUN export RUNNER_ARCH=${TARGETARCH} \
     && chmod +x /usr/local/lib/docker/cli-plugins/docker-compose \
     && true
 
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
 WORKDIR /home/runner
 USER runner

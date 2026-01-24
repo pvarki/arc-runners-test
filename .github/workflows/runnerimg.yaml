@@ -24,15 +24,15 @@ jobs:
       - name: Fix ref slashes
         run: |
           echo REF_NO_SLASHES=$(echo "${{ github.ref_name }}" | sed 's/\//-/g') >> ${GITHUB_ENV}
-      - name: Set DOCKER_TAG_EXTRA if not main
+      - name: Set DOCKER_TAG if not main
         if: github.event.pull_request.merged != true
         run: |
-          test "${{ github.ref }}" = "refs/heads/main" || echo "DOCKER_TAG_EXTRA=${DOCKER_TAG_EXTRA}-$REF_NO_SLASHES" >> ${GITHUB_ENV}
+          test "${{ github.ref }}" = "refs/heads/main" && echo "DOCKER_TAG=latest" >> ${GITHUB_ENV}  || echo "DOCKER_TAG=$REF_NO_SLASHES" >> ${GITHUB_ENV}
           cat ${GITHUB_ENV}
-      - name: Set DOCKER_TAG_EXTRA if date
+      - name: Set DOCKER_TAG if date
         run: |
-          test "${{ matrix.extra_env }}" = "date" && echo "DOCKER_TAG_EXTRA=${DOCKER_TAG_EXTRA}-$(date +%Y%m%d)" >> ${GITHUB_ENV} || true
+          test "${{ matrix.extra_env }}" = "date" && echo "DOCKER_TAG=${DOCKER_TAG}-$(date +%Y%m%d)" >> ${GITHUB_ENV} || true
           cat ${GITHUB_ENV}
       - name: build and push image
         run: |
-          docker build --pull --push -t ghcr.io/pvarki/actions-runner:latest${DOCKER_TAG_EXTRA} .
+          docker build --pull --push -t ghcr.io/pvarki/actions-runner:${DOCKER_TAG} .

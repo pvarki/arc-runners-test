@@ -1,0 +1,22 @@
+name: Actions Runner Controller Basics
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  basic_echo:
+    runs-on: arc-runner-set
+    steps:
+    - name: echo test
+      run: echo "🎉 This job uses runner scale set runners!"
+
+  pip_install:
+    runs-on: arc-runner-set
+    steps:
+    - name: pip upgrade and install
+      run: |
+        python3 -m pip install --upgrade pip
+        pip install poetry

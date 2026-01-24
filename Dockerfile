@@ -5,6 +5,13 @@ ARG COMPOSE_VERSION=5.0.1
 
 WORKDIR /actions-runner
 USER root
+
+RUN apt-get update && apt-get install -y \
+        python3-pip \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/* \
+    && true
+
 RUN export RUNNER_ARCH=${TARGETARCH} \
     && if [ "$RUNNER_ARCH" = "amd64" ]; then export DOCKER_ARCH=x86_64 ; fi \
     && if [ "$RUNNER_ARCH" = "arm64" ]; then export DOCKER_ARCH=aarch64 ; fi \

@@ -1,0 +1,8 @@
+name: default_test
+services:
+  sleeper1:
+    image: bash:latest
+    command: ["/usr/local/bin/bash", "-c", "sleep 20"]
+  sleeper2:
+    image: bash:latest
+    command: ["/usr/local/bin/bash", "-c", "sleep 20"]

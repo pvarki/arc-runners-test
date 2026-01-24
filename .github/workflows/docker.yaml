@@ -1,0 +1,35 @@
+name: Actions Runner Controller Docker
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  hello_world:
+    runs-on: arc-runner-set
+    steps:
+    - run: docker run --rm hello-world
+
+  compose_default:
+    runs-on: arc-runner-set
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - run: |
+          docker compose up -d
+          sleep 5
+          docker compose down -v
+
+  compose_custom:
+    runs-on: arc-runner-set
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - run: |
+          docker compose -f docker-compose-custom.yaml up -d
+          sleep 5
+          docker compose -f docker-compose-custom.yaml down -v

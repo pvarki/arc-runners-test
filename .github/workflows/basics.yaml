@@ -1,4 +1,4 @@
-name: Actions Runner Controller Demo
+name: Actions Runner Controller Basics
 on:
   pull_request:
   push:
@@ -7,8 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  Explore-GitHub-Actions:
-    # You need to use the INSTALLATION_NAME from the previous step
+  basic_echo:
     runs-on: arc-runner-set
     steps:
     - run: echo "🎉 This job uses runner scale set runners!"

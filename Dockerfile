@@ -8,6 +8,7 @@ USER root
 
 RUN apt-get update && apt-get install -y \
         python3-pip \
+        golang-go \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/* \
     && true

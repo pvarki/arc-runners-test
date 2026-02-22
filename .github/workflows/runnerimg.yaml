@@ -8,31 +8,43 @@ on:
 jobs:
   build_and_publish:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:  # TODO: figure out how to build aarch64 as well ?
-        extra_env: ["none", "date"]
-    steps:
+    steps:  # TODO: Spread across multiple runners https://docs.docker.com/build/ci/github-actions/multi-platform/#distribute-build-across-multiple-runners
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.ACR_REPO }}
+          username: ${{ vars.ACR_USERNAME }}
+          password: ${{ secrets.ACR_TOKEN }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - uses: actions/checkout@v5
         with:
           submodules: recursive
       - name: Fix ref slashes
         run: |
           echo REF_NO_SLASHES=$(echo "${{ github.ref_name }}" | sed 's/\//-/g') >> ${GITHUB_ENV}
-      - name: Set DOCKER_TAG if not main
+      - name: Set DOCKER_TAG_EXTRA if not main
         if: github.event.pull_request.merged != true
         run: |
-          test "${{ github.ref }}" = "refs/heads/main" && echo "DOCKER_TAG=latest" >> ${GITHUB_ENV}  || echo "DOCKER_TAG=$REF_NO_SLASHES" >> ${GITHUB_ENV}
+          test "${{ github.ref }}" = "refs/heads/main" || echo "DOCKER_TAG_EXTRA=-$REF_NO_SLASHES" >> ${GITHUB_ENV}
           cat ${GITHUB_ENV}
-      - name: Set DOCKER_TAG if date
+      - name: Generate bakefile
         run: |
-          test "${{ matrix.extra_env }}" = "date" && echo "DOCKER_TAG=${DOCKER_TAG}-$(date +%Y%m%d)" >> ${GITHUB_ENV} || true
-          cat ${GITHUB_ENV}
-      - name: build and push image
+          .github/bakefile_variants.py >bakefile.hcl
+      - name: Build and push
+        if: ${{ !env.ACT }}
         run: |
-          docker build --pull --push -t ghcr.io/pvarki/actions-runner:${DOCKER_TAG} .
+          docker buildx bake -f bakefile.hcl --pull --push

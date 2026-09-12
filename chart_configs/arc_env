@@ -1,0 +1,4 @@
+NAMESPACE="arc-systems"
+INSTALLATION_NAME="arc-runner-set"
+NAMESPACE="arc-runners"
+GITHUB_CONFIG_URL="https://github.com/pvarki"

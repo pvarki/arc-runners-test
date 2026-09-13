@@ -1,7 +1,6 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
-default_language_version:
-    python: python3.11
+# Run with prek, see https://github.com/j178/prek
 default_install_hook_types:
   - pre-commit
   - commit-msg
@@ -16,34 +15,53 @@ repos:
     rev: v6.0.0
     hooks:
     -   id: no-commit-to-branch
+        stages: [pre-commit]
     -   id: check-executables-have-shebangs
+        stages: [pre-commit]
     -   id: check-ast
+        stages: [pre-commit]
     -   id: check-toml
+        stages: [pre-commit]
     -   id: trailing-whitespace
+        stages: [pre-commit]
     -   id: end-of-file-fixer
+        stages: [pre-commit]
     -   id: check-yaml
+        stages: [pre-commit]
     -   id: check-added-large-files
+        stages: [pre-commit]
     -   id: check-case-conflict
+        stages: [pre-commit]
     -   id: check-json
+        stages: [pre-commit]
     -   id: check-merge-conflict
+        stages: [pre-commit]
     -   id: check-symlinks
+        stages: [pre-commit]
     -   id: pretty-format-json
+        stages: [pre-commit]
         args:
         - --autofix
 -   repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.5.5
     hooks:
     -   id: forbid-crlf
+        stages: [pre-commit]
     -   id: remove-crlf
+        stages: [pre-commit]
     -   id: forbid-tabs
+        stages: [pre-commit]
     -   id: remove-tabs
+        stages: [pre-commit]
 -   repo: https://github.com/Yelp/detect-secrets
     rev: v1.5.0
     hooks:
     -   id: detect-secrets
+        stages: [pre-commit]
         # args: ['--baseline', '.secrets.baseline']
 -   repo: https://github.com/rhysd/actionlint
-    rev: "v1.7.8"
+    rev: "v1.7.10"
     hooks:
         - id: actionlint
+          stages: [pre-commit]
           args: ["-shellcheck", "''"]

@@ -68,4 +68,4 @@ template:
         emptyDir: {}
       - name: buildkit-client-tls
         secret:
-          secretName: arc-buildkit-client-tls
+          secretName: arc-buildkit-client-tls  # pragma: allowlist secret

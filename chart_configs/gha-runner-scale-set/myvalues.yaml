@@ -56,6 +56,9 @@ template:
             mountPath: /home/runner/_work
           - name: dind-sock
             mountPath: /var/run
+          - name: buildkit-client-tls
+            mountPath: /etc/buildkit/tls
+            readOnly: true
     volumes:
       - name: work
         emptyDir: {}
@@ -63,3 +66,6 @@ template:
         emptyDir: {}
       - name: dind-externals
         emptyDir: {}
+      - name: buildkit-client-tls
+        secret:
+          secretName: arc-buildkit-client-tls

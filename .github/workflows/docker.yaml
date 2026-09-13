@@ -33,3 +33,95 @@ jobs:
           docker compose -f docker-compose-custom.yaml up -d
           sleep 5
           docker compose -f docker-compose-custom.yaml down -v
+
+  build_multiarch:
+    runs-on: arc-runner-set
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Check BuildKit TLS files
+        run: |
+          ls -la /etc/buildkit/tls
+          test -r /etc/buildkit/tls/ca.crt
+          test -r /etc/buildkit/tls/tls.crt
+          test -r /etc/buildkit/tls/tls.key
+
+      - name: Check BuildKit connectivity
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          echo "=== TLS material ==="
+          ls -la /etc/buildkit/tls
+          test -r /etc/buildkit/tls/ca.crt
+          test -r /etc/buildkit/tls/tls.crt
+          test -r /etc/buildkit/tls/tls.key
+
+          echo "=== DNS ==="
+          getent hosts buildkit-amd64.buildkit.svc.cluster.local
+          getent hosts buildkit-arm64.buildkit.svc.cluster.local
+
+          echo "=== TCP ==="
+          timeout 5 bash -c \
+            'echo > /dev/tcp/buildkit-amd64.buildkit.svc.cluster.local/1234'
+
+          timeout 5 bash -c \
+            'echo > /dev/tcp/buildkit-arm64.buildkit.svc.cluster.local/1234'
+
+          echo "=== amd64 TLS ==="
+          timeout 10 openssl s_client \
+            -connect buildkit-amd64.buildkit.svc.cluster.local:1234 \
+            -servername buildkit-amd64.buildkit.svc.cluster.local \
+            -CAfile /etc/buildkit/tls/ca.crt \
+            -cert /etc/buildkit/tls/tls.crt \
+            -key /etc/buildkit/tls/tls.key \
+            -verify_return_error \
+            </dev/null
+
+          echo "=== arm64 TLS ==="
+          timeout 10 openssl s_client \
+            -connect buildkit-arm64.buildkit.svc.cluster.local:1234 \
+            -servername buildkit-arm64.buildkit.svc.cluster.local \
+            -CAfile /etc/buildkit/tls/ca.crt \
+            -cert /etc/buildkit/tls/tls.crt \
+            -key /etc/buildkit/tls/tls.key \
+            -verify_return_error \
+            </dev/null
+
+      - name: Set up native multiarch Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v4
+        with:
+          driver: remote
+          endpoint: tcp://buildkit-amd64.buildkit.svc.cluster.local:1234
+          platforms: linux/amd64
+          driver-opts: |
+            cacert=/etc/buildkit/tls/ca.crt
+            cert=/etc/buildkit/tls/tls.crt
+            key=/etc/buildkit/tls/tls.key
+            servername=buildkit-amd64.buildkit.svc.cluster.local
+          append: |
+            - name: native-arm64
+              endpoint: tcp://buildkit-arm64.buildkit.svc.cluster.local:1234
+              platforms: linux/arm64
+              driver-opts:
+                - cacert=/etc/buildkit/tls/ca.crt
+                - cert=/etc/buildkit/tls/tls.crt
+                - key=/etc/buildkit/tls/tls.key
+                - servername=buildkit-arm64.buildkit.svc.cluster.local
+
+      - name: Inspect builder
+        run: |
+          docker buildx inspect --bootstrap
+          docker buildx ls
+
+      - name: Build multiarch test image
+        uses: docker/build-push-action@v7
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: false

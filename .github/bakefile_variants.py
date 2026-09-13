@@ -1,15 +1,28 @@
 #!/usr/bin/env python3
 """Create bakefile"""
-from typing import Dict, Any, Sequence, Tuple
+from typing import Dict, Any, List, Sequence, Tuple
 import asyncio
 import datetime
 import os
+import sys
 
 PLATFORMS = ("linux/amd64", "linux/arm64")
 ISODATE = datetime.datetime.now(datetime.UTC).date().isoformat()
 ORIG_REPO = "ghcr.io"
 ALT_REPOS = ("docker.io", os.environ.get("ACR_REPO", None))
 DOCKER_TAG_EXTRA = os.environ.get("DOCKER_TAG_EXTRA", "")
+RUNNER_IMAGE = f"{ORIG_REPO}/pvarki/actions-runner:latest{DOCKER_TAG_EXTRA}"
+
+
+def image_tags(image: str) -> List[str]:
+    """Resolve all the tags (in all the repos) for given image"""
+    imgtags_orig = [f"{image}", f"{image}-{ISODATE}"]
+    imgtags_more = []
+    for alt_repo in ALT_REPOS:
+        if not alt_repo:
+            continue
+        imgtags_more += [tag.replace(ORIG_REPO, alt_repo) for tag in imgtags_orig]
+    return imgtags_orig + imgtags_more
 
 
 def service_hcl(
@@ -18,13 +31,7 @@ def service_hcl(
     """Make the HCL"""
     hcl_targets = ""
     tgtname = servicename
-    imgtags_orig = [f"{servicedef['image']}", f"{servicedef['image']}-{ISODATE}"]
-    imgtags_more = []
-    for alt_repo in ALT_REPOS:
-        if not alt_repo:
-            continue
-        imgtags_more += [tag.replace(ORIG_REPO, alt_repo) for tag in imgtags_orig]
-    imgtags = imgtags_orig + imgtags_more
+    imgtags = image_tags(servicedef["image"])
     hcl_targets += f"""
 target "{tgtname}" {{
     tags = [{", ".join(f'"{imgtag}"' for imgtag in imgtags)}]
@@ -47,10 +54,14 @@ target "{tgtname}" {{
 
 async def main() -> None:
     """Main entry point."""
+    if "--tags" in sys.argv[1:]:
+        # Used by the CI to create the manifest list from per-arch builds
+        print("\n".join(image_tags(RUNNER_IMAGE)))
+        return
     ret_tgts, ret_hcl = service_hcl(
         "actions-runner",
         {
-            "image": f"ghcr.io/pvarki/actions-runner:latest{DOCKER_TAG_EXTRA}",
+            "image": RUNNER_IMAGE,
             "build": {
                 "context": "./",
                 "dockerfile": "Dockerfile",

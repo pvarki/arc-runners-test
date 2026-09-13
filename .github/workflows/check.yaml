@@ -1,0 +1,15 @@
+name: Code Quality + Standards
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  prek:
+    runs-on: ubuntu-latest
+    name: Run Pre-Commit Checks using Prek
+    steps:
+      - uses: actions/checkout@v5
+      - uses: j178/prek-action@v2
